@@ -1,0 +1,62 @@
+html,
+body {
+    height: 100%;
+}
+
+.bgBox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.line {
+    margin-bottom: 400px;
+    border-right: 2px solid #eee;
+    font-size: 28px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    color: #eee;
+    font-variant-numeric: slashed-zero;
+    user-select: none;
+}
+
+.animation {
+    animation: grow 4s steps(44) 1s normal both,
+        blink 0.5s steps(44) infinite normal;
+}
+
+/* From uiverse.io by @satyamchaudharydev */
+/* === removing default button style ===*/
+.button {
+    margin: 0;
+    background: transparent;
+    padding: 0;
+    border: none;
+}
+
+// 打字机动画
+@keyframes grow {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 330px;
+    }
+}
+
+@keyframes blink {
+    from {
+        border-right-color: #eee;
+    }
+
+    to {
+        border-right-color: #222;
+    }
+}

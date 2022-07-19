@@ -1,0 +1,59 @@
+.box {
+    height: 100%;
+}
+nav::before{
+    content: '';
+    width: inherit;
+    height: inherit;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: none;
+    background-color: black;
+    background-size: 150% 150%;
+}
+nav {
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 80px;
+    div {
+        position: relative;
+        width: 20%;
+        text-align: center;
+        line-height: 80px;
+        cursor: pointer;
+        font-size: 19px;
+        font-weight: 500;
+        color: #ededed;
+    }
+    div:hover{
+        color: #1890ff;
+    }
+}
+.carousel{
+    padding-bottom: 50px;   
+    background-color: black;
+    video{
+        width: 87%;
+        display: block;
+        margin: 0 auto;
+        height: 100%;
+    }
+}
+.header {
+    height: 550px;
+    background-position: center center;
+    background: url('../../img/iu.jpg') no-repeat fixed;
+    background-position: 0 90%;
+}
+
+.body {
+    height: 550px;
+    object-fit: cover;
+    background: url('../../img/header.jpg') center fixed;
+    background-position: -200px 8%;
+}
+

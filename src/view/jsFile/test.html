@@ -1,0 +1,1625 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-cn">
+
+<HEAD>
+    <META http-equiv="Content-Type" content="text/html; charset=GBK">
+    <META http-equiv="Pragma" content="no-cache">
+    <META http-equiv="Cache-Control" content="no-store">
+    <META name="GENERATOR" content="IBM WebSphere Studio">
+    <script type="text/javascript">
+        var CTP_WEB_LANG = 'zh-cn';
+    </script>
+    <script type="text/javascript" src='../personal/js/jquery/jquery.js;pvb998125cf01fa954'></script>
+    <script type="text/javascript" src='../personal/js/jscommon.js;pv90277e0dbbe1c843'></script>
+    <link href='../personal/css/all.css" rel="stylesheet" type="text/css'/>
+    <script type="text/javascript" src="../personal/js/jsbase.js;pveaea7c393ac2c3e1"></script>
+    <link href="../personal/css/csscommon.css;pv98cb4d6dd2003fab" rel="stylesheet" type="text/css"/>
+    <script type="text/javascript" src="js/enhanceData.min.js;pv9f623d36209260bb"></script>
+    <script type="text/javascript" src="js/behavior.min.js;pv21cd8d5fb7d01fc8"></script>
+    <link rel="stylesheet" type="text/css" href="css/soft_board.css;pv22c0ef6e511f654f"/>
+    <link rel="stylesheet" type="text/css" href="css/sliceCaptcha.css;pvedfb50cb83a01d1b"/>
+    <TITLE>身份认证与集中授权平台</TITLE>
+    <script type="text/javascript">
+        (function () {
+                _fmOpt = {
+                    partner: 'icbc',
+                    appName: 'F-AAM',
+                    token: 'icbc' + "-" + new Date().getTime() + "-" + Math.random().toString(16).substr(2),
+                    fpHost: "http://REAF-WEB-DEV.ICBC:8088/devcollect",
+                    fmb: true,
+                    cub: true,
+                    success: function (data) {
+                        // 在成功完成采集后，success回调中可以获取到black_box,这可以设置客户需求的操作，传输black_box等操作
+                        //获取设备指纹盒数据，并提交到业务服务器,在传输过程中请对blackbox进url编码
+                        console.log('black_box: ' + data);
+                        blackBox = data;
+                    },
+                };
+                // 通过脚本加载 fm.js，可以了解到下载 js 脚本所花费的时间
+                var fm = document.createElement('script');
+                fm.type = 'text/javascript';
+                fm.async = true;
+                // 请修改 src，更新时建议添加参数消除缓存，如 从 "fm.js?ver=0.1" 改到 "fm.js?ver=0.2"
+                fm.src = _fmOpt.fpHost + '/static/fm.js?ver=' + Math.random().toString(16);
+                _fmOpt.sTime = +new Date()
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(fm, s);
+                fm.onload = fm.onreadystatechange = function () {
+                    _fmOpt.onTime = +new Date();
+                }
+            }
+        )();
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            document.getElementById("TestPwd").vspace = 1600;
+            $(".editclose").click(function () {
+                $("#message_box_pwd").css("display", "none");
+                $("#message_box_adnotes").css("display", "none");
+                $("#pop_div_pwd").css("display", "none");
+                $("#pop_div_adnotes").css("display", "none");
+                $("#pop_div_hr").css("display", "none");
+                $("#message_box_hr").css("display", "none");
+                $("#pop_div_hr_ad").css("display", "none");
+                $("#message_box_hr_ad").css("display", "none");
+                $("#login").attr("disabled", false);
+                $("#TestPwd").attr("disabled", false);
+                $("#TestPwd").val("");
+            });
+            hideLoginPanel();        //13年5月补丁,修复单点登录看到密码控件问题
+        });
+    </script>
+    <script language="JavaScript">
+        function trim(str) {
+            var a = /^(\s|\u00A0)+|(\s|\u00A0)+$/g;
+            return (str || "").replace(a, "");
+        }
+
+        //***********************判断浏览器是否安装了安全控件****************************
+        var objectCount = 0;
+        var siteName = "";        //13年5月版获取专业系统的名称，kfzx-chenl，20130417
+        var enSiteName = "";
+        var isDisplay = "";        //13年5月版获取专业系统的名称，kfzx-chenl，20130417
+        var errorCode;      //2014年4月版 对于冻结账号，提示信息增加 管理员notesid和座机号 add by huangwj
+        var defaultLoginWay = "";
+        var loginWay = "";
+        var encSiteName = "";
+        var ad = "";
+        var mac = "";
+        var computerName = "";
+        var code = "";
+        var CUR_LOGIN_WAY = '1';
+        var CANCEL_LOGIN_WAY_TEXT = '取消默认';
+        var SET_LOGIN_WAY_TEXT = '设为默认';
+        var dataEncodeUtil;
+        var needRefresh = false;
+        var behaviorFlag = false;
+        var isIE = checkIE();
+        var sliceServiceUrl = "/servlet/com.icbc.ssic.base.BehaviorServlet";
+        var useCanvas = false;      //是否使用Canvas
+        var useStream = true;       //图片使用流的方式，或URL。
+        var userEncrypt = true;     //是否加密
+        var crypto_kind = 1;
+        var sliceClientID = "";
+        var sliceErrorNum = 0;
+        var reqloginData;
+        var jumpFlag = decodeURIComponent("0");
+        var siteService = decodeURIComponent("");
+        var pageSwitch = decodeURIComponent("1");
+        var siteOp = decodeURIComponent("");
+        var siteVersion = decodeURIComponent("1.0");
+        var siteURL = decodeURIComponent("");
+        var language = decodeURIComponent("");
+        var style = decodeURIComponent("0");
+        var opMode = decodeURIComponent("0");
+        var objPwd = decodeURIComponent("x86");
+        var fpAuthSMSwitch = 'true';
+        var blackBox = "";
+
+        function getClientID(reqloginData) {
+            $.ajax({
+                type: 'get',
+                url: "/servlet/com.icbc.ssic.base.BehaviorServlet",
+                data: '',
+                timeout: 5000,
+                success: function (ip) {
+                    sliceClientID = sliceClientID;
+                    createSliceCaptcha('sliceCaptcha', reqloginData);
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert('服务器请求 获取IP失败');
+                    console.error('服务器请求 获取IP失败，错误码：' + XMLHttpRequest.status);
+                    console.log(XMLHttpRequest);
+                }
+            });
+        }
+
+        function getRequest(type, url, data, successFunc, errorFunc, tip) {
+            $.ajax({
+                type: type,
+                url: url,
+                data: data,
+                timeout: 15000,
+                success: function (data) {
+                    if ('/servlet/com.icbc.ssic.base.AsynLogin' == url) {
+                        handleAsyLoginRes(data, tip);
+                    }
+                    successFunc(data);
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    console.log('服务器请求失败，错误码：' + XMLHttpRequest.status);
+                    console.log(XMLHttpRequest);
+                    errorFunc();
+                }
+            });
+        }
+
+        function createSliceCaptcha(divID, reqloginData) {
+            var slice = new SliceCaptcha(divID, {
+                // mode: 'pop',//弹出式pop，固定fixed
+                bgWidth: 300,        //验证码背景图片的宽，宽度如果是'**%' 是相对于手机屏幕宽
+                bgHeight: 200,       //验证码背景图片的高，高度如果是'**%' 是相对于宽度
+                barHeight: 24,       //滑动条的高度
+                dragWidth: 34,       //拖拽BTN的宽
+                dragHeight: 24,      //拖拽BTN的高
+                dragBorderR: 12,     //拖拽BTN的圆角半径
+                dragColor: '#9296db', //拖拽BTN的颜色
+                bgMarginW: 15,        //图片边缘留白的宽度
+                barBgDistance: 0,     //滑动条和验证框的距离
+                bgColor: '#eeeeee',   //背景颜色
+                message: {            //提示信息
+                    loading: '加载中...',
+                    checking: '正在验证 请稍等...',
+                    tip: '按住滑块，拖动完成拼图',
+                    seccess: '验证成功',
+                    fail: '位置不正确',
+                    forbidden: '操作异常',
+                    error: '网络错误'
+                },
+                clientID: sliceClientID,    //用于加密
+                useCanvas: useCanvas,       //是否使用Canvas
+                cw: 60,           //裁剪滑块的大小
+                ch: 60,
+                cRadius: 8,       //裁剪滑块 耳朵的半径
+                cTransparency: 0.8,      //裁剪区域的透明度 0~1，值越大区域越黑
+                useMixBlock: true,      //是否使用混淆裁剪块
+                cMixTransparency: 0.4,   //混淆裁剪块的透明度 0~1，值越大区域越黑
+                dragClip: true,         //是否可以拖拽 裁剪滑块
+                blockStyle: [],         //[1, 1, -1, 1],//滑块的样式，-1表示内凹 1表示外凸 0或其他表示不画耳朵
+                padding: 0,             //滑块初始位置 距离左边缘的偏移
+                needAgainNum: 1,        //用户验证失败几次，需要重新拉取数据
+                userEncrypt: userEncrypt,  //是否使用3DES加密
+                crypto_kind: crypto_kind,
+                captchaTitle: "安全验证",
+                captchaTitleSize: 16,
+                captchaTitleColor: "#000",
+                requestData: function (param, successCallback, errorCallback, captchaObject) {
+                    //captchaObject是当前的验证码对象 用于调用验证码的函数
+                    var paramObj = {
+                        captchaType: useCanvas ? 'slice_canvas' : 'slice_data',
+                        height: param.height,
+                        width: param.width,
+                        sliceW: param.cw,
+                        sliceH: param.ch,
+                        timeStamp: new Date(),
+                        uuid: sliceClientID
+                    }
+                    getRequest('get', sliceServiceUrl, 'param=' + JSON.stringify(paramObj), function (data) {
+                        var obj = JSON.parse(data);
+                        obj.imageUrl = sliceServiceUrl + '?param=' + JSON.stringify({
+                            captchaType: 'slice_bgimage',
+                            timeStamp: new Date(),
+                            "uuid": sliceClientID
+                        });
+                        obj.sliceImageUrl = sliceServiceUrl + '?param=' + JSON.stringify({
+                            captchaType: 'slice_sliceimage',
+                            timeStamp: new Date(),
+                            "uuid": sliceClientID
+                        });
+                        data = JSON.stringify(obj);
+                        successCallback(data);
+                    }, function (error) {
+                        errorCallback(error);
+                    }, reqloginData.tip);
+                },
+                sendData: function (resData, resCallback) {
+                    var resObj = resData;
+                    if (userEncrypt)
+                        resObj += '||slice_check';
+                    reqloginData.Data = resObj;
+                    reqloginData.uuid = sliceClientID;
+                    getRequest('post', "/servlet/com.icbc.ssic.base.AsynLogin", reqloginData, function (res) {
+                        resCallback(res);
+                    }, function () {
+                        resCallback('networkerror');
+                    }, reqloginData.tip);
+                },
+                ready: function () {
+                    $('#slice-close').bind('click', function (event) {
+                        $("#TestPwd").attr("disabled", false);
+                        $("#login").attr("disabled", false);
+                        document.logonform.TestPwd.focus();
+                    });
+                },
+                checkResult: function (res) {
+                    if (res == 'success') {
+                        console.log("验证成功，添加你自己的代码！");
+                    } else {
+                        console.log("未知错误，添加你自己的代码！");
+                    }
+                }
+            });
+            $("#slice-body").css("padding-top", "35px");
+            $("#slice-body").css("padding-bottom", "15px");
+            $(".slice-border-radius").css("border-radius", "5px");
+        }
+
+        function getLoginPreData() {
+            var reqRandom = {
+                "sysUserName": ad,
+                "siteNo": siteService,
+                "computerName": computerName,
+                "loginLan": "zh_CN"
+            };
+            $.ajax({
+                url: "/servlet/com.icbc.ssic.base.GetPreDataBeforeLoginNew",
+                async: false,
+                data: reqRandom,
+                dataType: "json",
+                type: "POST",
+                cache: false,
+                success: function (data) {
+                    if (data) {
+                        siteName = unescape(decodeURI(data.chSiteName));
+                        enSiteName = unescape(decodeURI(data.enSiteName));                  // 站点英文名
+                        isDisplay = data.isDisplay;
+                        defaultLoginWay = data.defaultLoginWay;
+                        loginWay = data.loginWay;
+                        code = data.code;
+                        document.logonform.preuuidKey.value = sliceClientID;
+                        sliceClientID = data.UUIDKEY;
+                        if (siteName == "NULL") {
+                            siteName = "授权平台";
+                        } else {
+                            if (isDisplay != '1') {
+                                siteName = "授权平台";
+                            }
+                        }
+                        encSiteName = encodeURI(siteName);
+                        var params = {
+                            keyInfo: code,            //公钥
+                            obj: document.getElementById("TestPwd"),  //输入框
+                            maxLen: 30,             //输入框最大长度30位
+                            enableSoftKeyboard: 1,  //否启用软键盘(1.启用；0.不启用)
+                            needFeedback: 0,       //是否需要回显输入框(1.回显；0.不回显)
+                            isOutOfOrder: 1 //数字键盘是否随机排序(1.乱序；0顺序)
+                        }
+                        dataEncodeUtil = new enhanceDataObject(params);
+                        $('#siteName').text(siteName);
+                        window.top.document.title = siteName;
+                        if (pageSwitch == 1) {
+                            if (loginWay != 1 && loginWay != '') {
+                                switchLoginPage(loginWay);
+                            } else {
+                                showLoginPanel();
+                            }
+                        } else {
+                            showLoginPanel();
+                        }
+                    } else {
+                        showLoginPanel();
+                    }
+                },
+                error: function (m, errtxt, xhr) {
+                    showLoginPanel();
+                }
+            });
+        }
+
+        function showLoginPanel() {
+            $(parent.document.getElementById("mainTab")).show(); //13年补丁,修复登录看到控件问题
+            $(parent.document.getElementById("mainTab")).width("100%");
+            $(parent.document.getElementById("mainTab")).height("100%");
+            document.getElementById("TestPwd").vspace = 1;//将光标定位在通行证号输入框
+            document.logonform.userName.focus();
+            if (defaultLoginWay == CUR_LOGIN_WAY) {
+                $("#default_btn").text(CANCEL_LOGIN_WAY_TEXT);
+            }
+        }
+
+        function hideLoginPanel() {
+            $(parent.document.getElementById("mainTab")).width(0);    //13年补丁,修复登录看到控件问题
+            $(parent.document.getElementById("mainTab")).height(0);
+            $(parent.document.getElementById("mainTab")).hide();
+            document.getElementById("TestPwd").vspace = 1600;
+        }
+
+        function on_Load() {
+            if (!isIE) {
+                $("#certloginway").hide();
+                $("#faceloginway").hide();
+                if (fpAuthSMSwitch == 'false') {
+                    $("#fploginway").hide();
+                }
+            }
+            var isNeedAD = decodeURIComponent("1");
+            var isTrustAD = decodeURIComponent("");
+            var isAdSuccess = decodeURIComponent("");
+            var adSupport = "intranet.icbc.com.cn";       //将JAVA对象转成JS字符串
+            var adfsServers = "https://adfs/adfs/ls/";
+            var cerADFiles = "/washome/data/adfs.cer";
+            ad = document.logonform.adObj.UserName + "@" + document.logonform.adObj.UserDomain;
+            computerName = document.logonform.adObj.ComputerName;
+            if (computerName == "" || computerName == null) {   //如果电脑名为空就传入IP
+                computerName = document.logonform.adObj.UserIp;
+            }
+            document.logonform.computerName.value = computerName;
+            try {
+                mac = document.logonform.adObj.UserMac;
+                document.logonform.mac.value = mac;
+            } catch (e) {
+                mac = "localhost";
+            }
+            document.logonform.mac.value = mac;
+            //注意：此条件必须和html中的安装读取操作系统用户的一致
+            if (isNeedAD == '1' && isTrustAD == '' && isAdSuccess == '' && adSupport != '') {
+                hideLoginPanel();
+                try {
+                    var strs = adSupport.split(",");
+                    var userDomain = document.logonform.adObj.UserDomain;
+                    var userName = document.logonform.adObj.UserName;
+                    var index = -1;
+                    if (userName && userDomain) {
+                        var isFind = false;
+                        for (var i = 0; i < strs.length; i++) {
+                            if (trim(strs[i].toLowerCase()) == userDomain.toLowerCase()) {
+                                isFind = true;
+                                index = i;
+                                break;
+                            }
+                        }
+                        if (isFind) {
+                            var reqData = {
+                                "sysUserName": userName + "@" + userDomain,
+                                "crpytFlag": "0",
+                                "adOP": "adPerformBeforeLogon",
+                                "isAdSuccess": "true",
+                                "isValiJsp": "false"
+                            };
+                            $.ajax({
+                                url: "/servlet/com.icbc.ssic.base.Uniformlogon",
+                                async: false,
+                                data: reqData,
+                                dataType: "json",
+                                type: "POST",
+                                cache: false,
+                                success: function (data) {
+                                    if (data) {
+                                        var ssoExpire = data.ssoExpire;
+                                        if (data.isTrustAD == '1') {
+                                            //单点登录密码到期提醒
+                                            var reqData = {
+                                                "AD": userName + "@" + userDomain
+                                            };
+
+                                            $.ajax({
+                                                url: "/servlet/com.icbc.ssic.base.GetModifyPwdTime",
+                                                async: false,
+                                                data: reqData,
+                                                type: "POST",
+                                                cache: false,
+                                                success: function (_data) {
+                                                    data = eval('(' + _data + ')');
+                                                    if (data.errCode == '-5') {
+                                                        //人力信息登记提醒
+                                                        getLoginPreData();
+                                                        $("#pop_div_hr_ad").css("display", "block");
+                                                        $("#message_box_hr_ad").css("display", "block");
+
+                                                        $("#tohrbtad").css("display", "block");
+                                                        $(".tipad_box_text").css("display", "block");
+                                                        $('#remindmsgtext_ad').text(unescape(decodeURI(data.remindmsg)));
+                                                        return;
+                                                    } else if (data.errCode == '-4') {
+                                                        //首次登录和不再提醒的继续登录
+                                                        getLoginPreData();
+                                                        openssopwdwin(data.tellerno, '3', data.isPCI);
+                                                    } else if (data.errCode == '-1') {
+                                                        getLoginPreData();
+                                                        openssopwdwin(data.tellerno, '4', data.isPCI);
+                                                    } else {
+                                                        //获取对应域的ADFS服务地址和证书文件
+                                                        $(parent.document.getElementById("loading_msg")).text("正在进行身份认证，请稍候......");
+                                                        var adfsServ = adfsServers.split(',')[index];
+                                                        var wctx = "SERVICENAME=&SERVICEURL=&OP=&OPMode=1&VERSION=1.0&flag=" + "&cerFileIndex=" + index;
+                                                        //增加参数证书文件   修改WCTX直接由TEMP变量构造
+                                                        wctx += "&mainLocal=" + parent.location.protocol + "//" + parent.location.host;
+                                                        //增加当前页面用户输入的地址
+                                                        wctx += "&ssoExpire=" + ssoExpire;
+                                                        wctx = encode64(strUnicode2Ansi(wctx));
+                                                        //base64编码
+                                                        document.adlogonform.action = adfsServ;
+                                                        //重置ADFS地址
+                                                        document.adlogonform.wctx.value = wctx;
+                                                        document.adlogonform.target = "_self";
+                                                        //在当前页面跳转
+                                                        document.adlogonform.submit();
+                                                        return true;
+                                                    }
+                                                },
+                                                error: function (m, errtxt, xhr) {
+                                                    alert(errtxt);
+                                                }
+                                            });
+
+                                        } else {
+                                            getLoginPreData();
+                                        }
+
+                                    } else {
+                                        getLoginPreData();
+                                    }
+                                },
+                                error: function (m, errtxt, xhr) {
+                                    getLoginPreData();
+                                }
+                            });
+                        } else {
+                            getLoginPreData();
+                        }
+                    } else {
+                        getLoginPreData();
+                    }
+                } catch (ex) {
+                    getLoginPreData();
+                }
+            } else {
+                getLoginPreData();
+            }
+            $('#TestPwd').bind('keydown', function (event) {
+                if (event.keyCode == 13) {
+                    $("#jianpan").hide();
+                    submitForm();
+                }
+            });
+            document.logonform.target = "_parent";
+            try {
+                var WshShell = new ActiveXObject("WScript.Shell");
+            } catch (e) {
+                if (isIE) {
+                    ctpMSB.confirm({
+                        message: "当前站点未被添加为受信任站点!<br/>请点击<font color='blue'>确定</font>添加当前站点为受信任站点。<br/>",
+                        handler: function (_v) {
+                            if (_v == 'ok') {
+                                document.safe_web.submit();
+                                return;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function getIEVersion() {
+            var ver = -1;
+            if (navigator.appName == 'Microsoft Internet Explorer') {
+                var ua = navigator.userAgent;
+                var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+                if (re.exec(ua) != null)
+                    ver = parseFloat(RegExp.$1);
+
+            }
+            return ver;
+        }
+
+        function checkIE() {
+            if (!!window.ActiveXObject || "ActiveXObject" in window) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        var I64BIT_TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'.split('');
+
+        function hash(input) {
+            var hash = 5381;
+            var i = input.length - 1;
+            if (typeof input == 'string') {
+                for (; i > -1; i--)
+                    hash += (hash << 5) + input.charCodeAt(i);
+            } else {
+                for (; i > -1; i--)
+                    hash += (hash << 5) + input[i];
+            }
+            var value = hash & 0x7FFFFFFF;
+            var retValue = '';
+            do {
+                retValue += I64BIT_TABLE[value & 0x3F];
+            } while (value >>= 6);
+            return retValue;
+        }
+
+        //通行证提示信息是否存在的标记，1为存在，0为不存在
+        var classFlag = 1;
+
+        //是否显示通行证提示信息判断
+        function removeBg() {
+
+            var userName = $('#userName');
+
+            if (userName.val() != '' && classFlag == 1) {
+                classFlag = 0;
+                $('#userName').removeClass('cInputValue');
+            }
+
+        }
+
+        //登录提示信息显示
+        function alertMsg(msg, name) {
+            var _width = '386';
+            var _height = '156';
+            if (errorCode == '-3') {
+                _width = '400';
+                _height = '200';
+            }
+
+            ctpMSB.alert({
+                title: '提示信息',
+                width: _width,
+                height: _height,
+                message: msg,
+                handler: function () {
+                    //对于冻结账号，提示信息增加 管理员id和座机号
+                    if (needRefresh) {
+                        location.reload();
+                    }
+                    $("#TestPwd").val("");
+                    $("#TestPwd").attr("disabled", false);
+                    $("#login").attr("disabled", false);
+                    setTimeout(function () {
+                        if (name != 'TestPwd') {
+                            $('#' + name).focus();
+                        } else {
+                            //密码控件框特殊处理
+                            ToCDB();
+                            //将通行证号输入框中的全角转换为半角，并去掉空格
+                            document.logonform.TestPwd.focus();
+                        }
+                    }, 100);
+                }
+            });
+
+        }
+
+        function getfocus1(name) {
+            var userName = document.logonform.userName.value;
+            if (userName == '') {
+                classFlag = 1;
+                $('#userName').addClass('cInputValue');
+            } else {
+                classFlag = 0;
+                $('#userName').removeClass('cInputValue');
+            }
+
+            if (window.event.keyCode == 13 || window.event.keyCode == 9) {
+                if (window.event.keyCode == 9) {       // 2014年2月版 调整登录页面tab键顺序 huangwj
+                    window.event.returnValue = false;
+                }
+                if (userName.length == 0) {
+                    alertMsg('请输入通行证/别名/手机号！', 'userName');
+                    return;
+                } else if ($("#TestPwd").val().length == 0) {
+                    // 2014年2月版 调整登录页面tab键顺序
+                    ToCDB();
+                    //将通行证号输入框中的全角转换为半角，并去掉空格
+                    document.logonform.TestPwd.focus();
+                    return;
+                }
+                document.logonform[name].focus();
+            }
+            if (userName.length == 0) {
+                logonform.userName.focus();
+                return;
+            }
+        }
+
+        function submitForm1() {
+            var _pwd = dataEncodeUtil.getEncryptData();
+            if (_pwd.length == 0) {
+                ToCDB();    //将通行证号输入框中的全角转换为半角，并去掉空格
+            }
+            //2014年2月版 调整tab键跳转顺序 add by huangwj
+            if (window.event.keyCode == 9) {
+                $("#login").focus();
+                window.event.returnValue = false;
+                return;
+            }
+            if (window.event.keyCode == 13)
+                submitForm();
+        }
+
+        //***********************验证用户登录提交表单内容的合法性****************************
+        function submitForm() {
+            $("#TestPwd").attr("disabled", true);
+            $("#login").attr("disabled", true);
+            ToCDB();         //将通行证号输入框中的全角转换为半角，并去掉空格
+            var userName = document.logonform.userName.value;
+            var subObj = eval("document.logonform");
+            if (userName.length == 0) {
+                alertMsg('请输入通行证/别名/手机号！', 'userName');
+                return;
+            }
+            if ($("#TestPwd").val().length == 0) {
+                alertMsg('请输入密码！', 'TestPwd');
+                return;
+            }
+            document.logonform.password.value = dataEncodeUtil.getEncryptData();
+            document.logonform.prepassword.value = document.logonform.password.value;
+            document.logonform.sysUserName.value = "";
+            document.logonform.crpytFlag.value = "1";
+            document.logonform.isTrustAD.value = "";
+            document.logonform.isAdSuccess.value = "";
+            submitAsynForm(0);
+        }
+
+        //13年5月版易用性改造项目，异步提交表单请求，kfzx-chenl，20130422
+        function submitAsynForm(tip) {
+            //2013年10月版补丁, kfzx-cenjm, 在客户端信息的cookie增加控件模式信息
+            var userName;
+            var password;
+            var crpytFlag;
+            var uuidkey;
+            var SERVICENAME = siteService;
+            var SERVICEURL = siteURL;
+            var OP = siteOp;
+            var OPMode = document.logonform.OPMode.value;
+            var VERSION = siteVersion;
+            var adOP = document.logonform.adOP.value;
+            var isValiJsp = document.logonform.isValiJsp.value;
+            var sysUserName = "";
+            var isTrustAD = "";
+            var isAdSuccess = "";
+            var isDynamicPwd;
+            //是否动态密码，13年11月版本补丁3，lijh02
+            var _data;
+            var macUuid;
+            var trustEquipmentCode;
+            //14年1月，保险起见，在提交登录前再次从控件中获取机器名，lijh02
+            computerName = document.logonform.adObj.ComputerName;
+            document.logonform.computerName.value = computerName;
+            try {
+                mac = document.logonform.adObj.UserMac;
+            } catch (e) {
+                mac = "localhost";
+            }
+            document.logonform.mac.value = mac;
+            crpytFlag = "1";
+            userName = document.logonform.userName.value;
+            if (tip == 1) {
+                password = document.logonform.prepassword.value;
+                uuidkey = document.logonform.preuuidKey.value;
+            } else {
+                password = document.logonform.password.value;
+                uuidkey = sliceClientID;
+            }
+            isDynamicPwd = document.logonform.value;
+            //是否动态密码，13年11月版本补丁3，lijh02
+            //	macUuid = mac+"-"+hash(uuidkey);
+            //	trustEquipmentCode = encryptSM2(dataEncodeUtil.pubKey,macUuid);
+            reqloginData = {
+                "userName": userName,
+                "password": password,
+                "SERVICENAME": SERVICENAME,
+                "SERVICEURL": SERVICEURL,
+                "OP": OP,
+                "VERSION": VERSION,
+                "OPMode": OPMode,
+                "isValiJsp": isValiJsp,
+                "sysUserName": sysUserName,
+                "crpytFlag": crpytFlag,
+                "isTrustAD": isTrustAD,
+                "isAdSuccess": isAdSuccess,
+                "objPwd": objPwd,
+                //2013年10月版补丁, kfzx-cenjm, 在客户端信息的cookie增加控件模式信息
+                "computerName": computerName,
+                //2014年1月版, kfzx-cenjm, 在客户端信息的cookie增加计算机名称
+                "isDynamicPwd": isDynamicPwd,
+                //是否动态密码，13年11月版本补丁3，lijh02
+                "mac": mac,
+                //14年1月版本，lijh02，客户端mac地址
+                "loginWay": "1",
+                "uuidKey": uuidkey,
+                "tip": tip,
+                //			"trustEquipmentCode":trustEquipmentCode,
+                "blackBox": blackBox
+            };
+            if (behaviorFlag && tip == 0) {
+                $("#sliceCover").show();
+                $("#sliceCaptcha").css('display', 'block');
+                getClientID(reqloginData);
+            } else {
+                $.ajax({
+                    url: "/servlet/com.icbc.ssic.base.AsynLogin",
+                    async: false,
+                    data: reqloginData,
+                    dataType: "json",
+                    type: "POST",
+                    cache: false,
+                    success: function (tempdata) {
+                        if (tempdata) {
+                            _data = tempdata;
+                        }
+                    },
+                    error: function (m, errtxt, xhr) {//	getLoginPreData();
+                    }
+                });
+                handleAsyLoginRes(_data, tip);
+            }
+            getLoginPreData();
+        }
+
+        function handleAsyLoginRes(_data, tip) {
+            var SERVICENAME = siteService;
+            var SERVICEURL = siteURL;
+            var failsigninsum;
+            //密码失败次数返回
+            var maxPwdTrys;
+            // 最大登陆错误次数
+            var admins;
+            //冻结用户的管理员返回
+            var reason;
+            //无权限访问专业系统提示原因
+            var isValiJspRet;
+            //单台验证标识
+            var pwdErrorCode;
+            //密码强制修改页面提示信息返回码，2013年5月版异步提交修改，kfzx-chenl，20130423
+            var isPCI;
+            //PCI标识
+            var isTrustADret;
+            var serviceUrl;
+            var tipPwdMod;
+            //修改密码提醒
+            var enReason;
+            var pwdUserName;
+            //强制修改密码的通行证号
+            var isDynamicPwd;
+            //是否动态密码，13年11月版本补丁3，lijh02
+            var notes;
+            // Notes，14年5月版本，lijh02
+            var temp;
+            //提示信息
+            if (typeof _data == 'string') {
+                _data = JSON.parse(_data);
+            }
+            $("#sliceCover").hide();
+            behaviorFlag = false;
+            errorCode = _data.errorCode;
+            failsigninsum = _data.failsigninsum;
+            maxPwdTrys = _data.maxPwdTrys;
+            admins = unescape(decodeURI(_data.admins));
+            reason = unescape(decodeURI(_data.reason));
+            isValiJspRet = _data.isValiJsp;
+            pwdErrorCode = _data.pwdErrorCode;
+            //2015年1月版 liugc 增加ispci的参数,用于修改密码判断
+            isPCI = _data.isPCI;
+            document.logonform.isPCI.value = isPCI;
+            isTrustADret = _data.isTrustAD;
+            serviceUrl = _data.serviceUrl;      //不含签名串
+            auth = _data.auth;        //签名串
+            tipPwdMod = _data.tipPwdMod;
+            tipPwdModTime = unescape(decodeURI(_data.tipPwdModTime));
+            //13年11月版测试补丁，新增密码到期时间返回，20131216，kfzx-chenl
+            var enddatepos = tipPwdModTime.indexOf("日");
+            ////14年4月版 到期时间只需要显示到日 huangwj
+            if (enddatepos > -1) {
+                //截取 天 之前的内容作为到期日
+                tipPwdModTime = tipPwdModTime.substring(0, enddatepos + 1);
+                //14年4月版 到期时间只需要显示到日 huangwj
+            }
+            pwdUserName = _data.pwdUserName; //别名/人员编码转化后的通行证号
+            window.passwdUserName = pwdUserName;   //不再提醒修改密码使用
+            if (tip == '0') {
+                //首次登录和不再提醒的继续登录
+                if (tipPwdMod != null && tipPwdMod != "null" && tipPwdMod != "") {
+                    $("#pop_div_pwd").css("display", "block");
+                    $("#message_box_pwd").css("display", "block");
+                    $('#days').text(tipPwdMod);
+                    $('#overday').text(tipPwdModTime);
+                    //13年11月版测试补丁，新增密码到期时间返回，20131216，kfzx-chenl
+                    return;
+                }
+            }
+            if (isTrustADret == '0') {    //不信任AD跳登录页
+                document.redirectform1.action = "/uniform_attestation/login.jsp";
+                document.redirectform1.submit();
+            }
+            //增加AD/Notes登记提醒，14年5月，lijh02
+            if (tip == '0' && (errorCode == '0' || errorCode == '90')) {
+                tipad.checked = false;
+                tipnotes.checked = false;
+                var retAd = _data.ad;
+                notes = _data.notes;
+                isneedtips = _data.isneedtips;
+                remindmsg = unescape(decodeURI(_data.remindmsg));
+                if (isneedtips == '1' && remindmsg != null && remindmsg != '') {
+                    $("#pop_div_hr").css("display", "block");
+                    $("#message_box_hr").css("display", "block");
+                    $("#tohrbt").css("display", "block");
+                    $(".tipad_box_text").css("display", "block");
+                    $('#remindmsgtext').text(remindmsg);
+                    return;
+                }
+                if ((retAd == "") || (notes == "")) {
+                    var adnotestips = "您未登记";
+                    var adnotestitle = "登记";
+                    $("#pop_div_adnotes").css("display", "block");
+                    $("#message_box_adnotes").css("display", "block");
+                    if (retAd == "") {
+                        $("#add_ad_btn").css("display", "block");
+                        $(".tipad_box_text").css("display", "block");
+                        adnotestips = adnotestips + "AD帐号";
+                        adnotestitle = adnotestitle + "AD";
+                    }
+                    if (notes == "") {
+                        $("#add_notes_btn").css("display", "block");
+                        $(".tipnotes_box_text").css("display", "block");
+                        if (retAd == "") {
+                            adnotestips += "和";
+                            adnotestitle += "和";
+                        }
+                        adnotestips = adnotestips + "Notes邮箱 ";
+                        adnotestitle = adnotestitle + "Notes";
+                    }
+                    $('#adnotes_tips_msg').text(adnotestips + "，您可以选择现在登记，或继续登录。");
+                    $('#adnotes_title').text(adnotestitle + "提醒");
+                    return;
+                }
+            }
+            if (errorCode == '0') {        //直接登平台跳导航页
+                parent.document.redirectform2.isValiJsp.value = isValiJspRet;
+                parent.document.redirectform2.action = "/uniform_attestation/ssicmainframe.jsp";
+                parent.document.redirectform2.submit();
+
+            } else if (errorCode == '90') {   //跳专业系统
+                if (SERVICENAME == 'OIS' || SERVICENAME == 'APMS') {
+                    //13年7月版测试补丁，配合境外参数管理系统，kfzx-chenl，20130806
+                    parent.document.redirectform1.action = "/uniform_attestation/gwok.jsp";
+                    // 公文系统中文版，同步13年4月版变更方案，解决公文跳转慢问题，kfzx-chenl，20130613
+                } else {
+                    parent.document.redirectform1.action = "/uniform_attestation/ok.jsp";
+                }
+                parent.document.redirectform1.SERVICEURL.value = SERVICEURL + auth;
+                parent.document.redirectform1.submit();
+
+            } else if (errorCode == '-4') {
+                //跳密码强制修改页面
+                openmodpwdwin(pwdUserName, pwdErrorCode, isPCI);
+            } else if (errorCode == '-29') {
+                opendevicebindwin();
+            } else {
+                var focus = 'userName';
+                //定义光标定位的提示框
+                if (errorCode == "-1") {
+                    temp = "数据库存储过程执行失败，请稍后再试。";
+                } else if (errorCode == "-2") {
+                    //剩余密码尝试次数，11年10月版，add by kfzx-chenl
+                    trynum = maxPwdTrys - failsigninsum;
+                    if (failsigninsum == "0") {
+                        temp = "您的通行证号不存在，请重新输入。";
+                    } else {
+                        temp = "通行证或密码不正确，您还有" + trynum + "次机会，请重新输入。";
+                        focus = 'TestPwd';
+                    }
+                } else if (errorCode == "-25") {
+                    //剩余密码尝试次数，11年10月版，add by kfzx-chenl
+                    trynum = maxPwdTrys - failsigninsum;
+                    if (failsigninsum == "0") {
+                        temp = "您的通行证号不存在，请重新输入。";
+                    } else {
+                        temp = "通行证或密码不正确，您还有" + trynum + "次机会，请重新输入。";
+                        focus = 'TestPwd';
+                    }
+                    behaviorFlag = true;
+                } else if (errorCode == "-26") {
+                    $("#sliceCover").show();
+                    $("#sliceCaptcha").css('display', 'block');
+                    return;
+                } else if (errorCode == "-27") {
+                    $("#sliceCover").show();
+                    $("#sliceCaptcha").css('display', 'block');
+                    getClientID(reqloginData);
+                    return;
+                } else if (errorCode == "-28") {
+                    temp = "因您长时间未完成登录操作，为保护您的账号安全，请刷新页面后重试。";
+                    needRefresh = true;
+                } else if (errorCode == "-31") {
+                    temp = "可信设备校验不通过，您绑定的可信设备数量已达上限！</br>请先在已绑定设备上登录身份证与集中授权平台，进入个</br>人设置进行设备管理！";
+                } else if (errorCode == "-32") {
+                    temp = "数字员工动态密码已过期，请重新获取动态密码后登录！";
+                } else if (errorCode == "-33") {
+                    temp = "请先清理IE浏览器缓存并关闭所有IE页面后重新登录。";
+                } else if (errorCode == "-3") {
+                    //冻结用户的管理员返回，12年2月版，add by kfzx-chenl   //edit by lijh 2012-10 增加忘记密码链接
+                    if (admins == null || "NULL" == admins || "null" == admins) {
+                        temp = "您的通行证号因密码输入次数超限，已被冻结，您可以使用平台首页<a href='#' onclick=openwin()><font color='blue'>“忘记密码？”</font></a>功能进行密码自助找回。或联系管理员！";
+                    } else {
+                        //查找到用户管理员
+                        temp = "您的通行证号因密码输入次数超限，已被冻结，您可以使用登录页<a href='#' onclick=openwin()><font color='blue'>“忘记密码？”</font></a>功能进行密码自助找回。管理员：" + admins;
+                    }
+                } else if (errorCode == "-5") {
+                    temp = "您的临时解冻已经过期，请重新申请解冻。";
+                } else if (errorCode == "-6") {
+                    temp = "您的登录别名不存在，请重新输入。";
+                    //10年4月版别名登录
+                } else if (errorCode == "-7") {
+                    temp = "请先清理IE浏览器缓存并关闭所有IE页面后重新登录。";
+                } else if (errorCode == "-8") {
+                    temp = "身份认证与集中授权平台服务端密码解密出错，请重新安装平台密码安全控件。";
+                } else if (errorCode == "-9") {
+                    //10年10月版员工身份认证与集中授权平台项目
+                    temp = "您输入的10位数字为员工编码，该员工编码系统中不存在，请重新输入或使用通行证/别名登录。";
+                } else if (errorCode == "-10") {
+                    temp = "您的员工编码与通行证号关联错误，请使用通行证号登录或联系所在部门人力资源管理系统的管理员。";
+                } else if (errorCode == "-11") {
+                    //12年7月版，实现无权限访问专业系统提示原因返回
+                    temp = reason;
+                } else if (errorCode == "-12") {
+                    temp = "您选择的证书非本行有效证书，请选择有效证书。";
+                } else if (errorCode == "-13") {
+                    temp = "您选择的证书非本行有效证书，请选择有效证书。";
+                } else if (errorCode == "-14") {
+                    temp = "您选择的证书未生效或已过期，请选择有效证书。";
+                } else if (errorCode == "-15") {
+                    temp = "您的证书是原AD证书，请联系管理员重新签发身份认证与集中授权平台的数字证书。";
+                } else if (errorCode == "-16") {
+                    temp = "您选择的证书非本行有效证书，请选择有效证书。";
+                } else if (errorCode == "-17") {
+                    temp = "请使用通行证号登录，将AD帐号与通行证号重新绑定后再重试AD证书登录。";
+                } else if (errorCode == "-18") {
+                    temp = "您的AD帐号在身份认证与集中授权平台上有多个对应的通行证记录，请确认您的AD帐号是否正确。";
+                } else if (errorCode == "-19") {
+                    temp = "您已修改了登录方式，请清理缓存并关闭所有IE浏览器后重新登录。";
+                } else if (errorCode == "-20") {
+                    temp = "目前系统不支持AD证书登录方式，请使用其他方式登录。";
+                } else if (errorCode == "-21") { //11年11月版  崔健锋 增加判断LDAP同步失败
+                    temp = "同步LDAP密码失败,请稍后再试。";
+                } else if (errorCode == "-23") { //15年1月版员工身份认证与集中授权平台项目
+                    temp = "您输入的手机号未进行绑定，请输入正确号码或登录网讯通讯录进行登记(次日生效)。";
+                } else if (errorCode == "-24") { //15年1月版员工身份认证与集中授权平台项目
+                    temp = "您的手机号已被其他通行证号绑定，请使用通行证号或别名登录。";
+                } else if (errorCode == "-30") { //13年5月版  lijh02 增加判断初始化站点失败
+                    temp = "密钥未初始化，请联系身份认证与集中授权平台环境维护人员进行初始化操作。";
+                } else if (errorCode == "1") {
+                    temp = "您的通行证号目前处于冻结状态";
+                    if (admins == null || "NULL" == admins || "null" == admins) {
+                        temp = temp + "，您可以使用平台自助找回。";
+                    } else {  //查找到用户管理员
+                        temp = temp + "，您可以使用平台自助找回。" + "管理员:" + admins;
+                    }
+                } else if (errorCode == "4") {
+                    temp = "您的临时密码已过期，请重新使用平台自助找回。";
+                } else if (errorCode == "9") {
+
+                    temp = "您的通行证已被注销，请联系所在部门人力资源管理系统的管理员。";
+                }  //2014年4月版，增加长期不动用户临时停用提示信息，add by kfzx-cenjm
+                else if (errorCode == "10") {
+                    temp = "您的通行证已被临时停用";
+                    if (admins == null || "NULL" == admins || "null" == admins) {
+                        //2017年2月版，统一管理员为NULL的判断，kfzx-cenjm
+                        temp = temp + "，请与您的管理员联系！";
+                    } else { //查找到用户管理员
+                        temp = temp + "，请与您的管理员" + admins + "联系！";
+                    }
+                }
+                //2016年12月版，增加离职冻结限制访问提示信息
+                else if (errorCode == "11") {
+                    temp = "您的通行证因任期到期或离职中处于冻结状态，无权访问本系统，如需访问";
+                    if (admins == null || "NULL" == admins || "null" == admins) {
+                        temp = temp + "，请与您部门的管理员联系！";
+                    } else {
+                        //查找到用户管理员
+                        temp = temp + "，请与您部门的管理员" + admins + "联系！";
+                    }
+                } else if (errorCode == "-22") {
+                    ctpMSB.alert({
+                        title: '提示信息',
+                        message: "本次登录已失效，请重新登录",
+                        width: '330px',
+                        btn: [['确定', 'ok']],
+                        handler: function () {
+                            window.location = window.location;
+                        }
+                    });
+                    return;
+                } else {
+
+                    temp = "其他错误。";
+                }
+                alertMsg(temp, focus);
+            }
+        }
+
+        //***增加跳转到人力系统 2016年8月版 liugc****
+        function redirectToHr(flag) {
+            if (flag = 'ad') {
+                document.logonform.action = "http://hrm.icbc/icbc/hrcms/index.jsp?page_flag=verify";
+                document.logonform.SERVICENAME.value = siteService;
+                document.logonform.SERVICEURL.value = siteURL;
+                document.logonform.OP.value = siteOp;
+                document.logonform.VERSION.value = siteVersion;
+                document.logonform.submit();
+            } else {
+                parent.document.redirectform4.action = "http://hrm.icbc/icbc/hrcms/index.jsp?page_flag=verify";
+                parent.document.redirectform4.submit();
+            }
+        }
+
+        function reloginserviceurl() {
+            var serurl = siteURL;
+            if (serurl) {
+                document.logonform.action = serurl;
+            } else {
+                document.logonform.action = '/uniform_attestation/login.jsp';
+            }
+            document.logonform.SERVICEURL.value = siteURL;
+            document.logonform.SERVICENAME.value = siteService;
+            document.logonform.OP.value = siteOp;
+            document.logonform.VERSION.value = siteVersion;
+            document.logonform.submit();
+        }
+
+        //***********************密码将到期提醒的继续登录，2013年5月版，kfzx-chenl，20130418****************************
+        function submitReForm(_loginItem) {
+            $("#login").attr("disabled", false);
+            $('#TestPwd').attr("disabled", false);
+            var tipsid = "";
+            if (tippwd.checked == true) {
+                tipsid = tipsid + "," + "004";
+            }
+            if (tipad.checked == true) {
+                tipsid = tipsid + "," + "001";
+            }
+            if (tipnotes.checked == true) {
+                tipsid = tipsid + "," + "002";
+            }
+
+            if (_loginItem != null && _loginItem != "") {
+                siteURL = "";
+            }
+            parent.document.redirectform2.loginItem.value = _loginItem;
+            parent.document.redirectform1.loginItem.value = _loginItem;
+            if (tipsid != "") {
+                tipsid = tipsid.substring(1);
+                var tellerno = window.passwdUserName;
+                var tipret;
+                //调用存储过程，增加取消提醒记录
+                $.get("/servlet/com.icbc.ssic.site.QueryTips?tipsId=" + tipsid + "&tellerno=" + tellerno, function (_data) {
+                    _data = eval('(' + _data + ')');
+                    tipret = _data;
+
+                    if (tipret != 0) {
+                        alert("身份认证与集中授权平台处理异常，请稍后再试。");
+                        return;
+                    } else {
+                        submitAsynForm(1);
+                    }
+                });
+
+            } else {
+                submitAsynForm(1);
+            }
+        }
+
+        //***********************密码将到期提醒的跳转到修改密码页面，2013年5月版，kfzx-chenl，20130418****************************
+        function reqModpwd() {
+            var userName = window.passwdUserName;
+            var isPCI = document.logonform.isPCI.value;
+            openmodpwdwin(userName, '7', isPCI);
+        }
+
+        //全角转半角，add by huhf 20150901全角空格为12288，半角空格为32，其他字符半角（33－126）与全角（65281－65374）的对应关系是均相差65248
+        function ToCDB() {
+            var str = document.logonform.userName.value;
+            var tmp = '';
+            for (var i = 0; i < str.length; i++) {
+                if (str.charCodeAt(i) > 65248 && str.charCodeAt(i) < 65375) {
+                    //如果为全角则转换为半角
+                    tmp += String.fromCharCode(str.charCodeAt(i) - 65248);
+                } else if (str.charCodeAt(i) != 32 && str.charCodeAt(i) != 12288) {
+                    //如果为空格则去掉空格
+                    tmp += String.fromCharCode(str.charCodeAt(i));
+                }
+            }
+            $('#userName').val(tmp);
+        }
+
+        //2013年5月版易用性改造，弹出重置密码框，kfzx-chenl，20130511flashFlag北中心刷新页面标识，解决跨域问题,0：不需要，1：需要
+        function openwin() {
+            ctpMSB.close();
+            $(".message_box_pwd").css("display", "none");
+            $(".pop_div_pwd").css("display", "none");
+            var winurl = 'resetpwd.jsp';
+            winurl = winurl + "?computerName=" + computerName + "&mac=" + mac;
+            var _title = '获取密码';
+            ctpMSB.win({
+                message: winurl,
+                width: 500,
+                height: 330,
+                title: _title,
+                handler: closewin,
+                maxBtn: true,
+                minBtn: true,
+                iframe: true
+            });
+        }
+
+        function opendevicebindwin() {
+            ctpMSB.close();
+            $(".message_box_pwd").css("display", "none");
+            $(".pop_div_pwd").css("display", "none");
+            var winurl = 'devicebind.jsp';
+            var userName = document.logonform.userName.value;
+            winurl = winurl + "?computerName=" + computerName + "&mac=" + mac + "&userName=" + userName + "&blackBox=" + blackBox;
+            var _title = '设备绑定';
+            ctpMSB.win({
+                message: winurl,
+                width: 520,
+                height: 405,
+                title: _title,
+                handler: closewin,
+                maxBtn: true,
+                minBtn: true,
+                iframe: true
+            });
+        }
+
+        //2013年5月版易用性改造，弹出修改密码框，kfzx-chenl，20130516
+        function openmodpwdwin(tellerno, errorCode, isPCI) {
+            $(".message_box_pwd").css("display", "none");
+            $(".pop_div_pwd").css("display", "none");
+            var _objPwd = objPwd;
+            //2014年1月版，kfzx-cenjm
+            //2014年8月版补丁5，修复北中心强制修改密码页面报错bug，kfzx-fansh，20140917
+            var winurl = 'modifypwdLogin.jsp?tellerno=' + tellerno + '&errorCode=' + errorCode + '&objPwd=' + _objPwd + '&computerName=' + computerName + '&mac=' + mac + '&isPCI=' + isPCI;
+            var _title = '修改密码';
+            ctpMSB.win({
+                message: winurl,
+                width: 800,
+                height: 400,
+                title: _title,
+                handler: closewin,
+                maxBtn: true,
+                minBtn: true,
+                iframe: true,
+                closeBtn: false//非单点登录修改密码弹出框无关闭图标
+            });
+        }
+
+        function openssopwdwin(tellerno, errorCode, isPCI) {
+
+            var _objPwd = objPwd;
+            var winurl = '/uniform_attestation/modifypwdLogin.jsp?tellerno=' + tellerno + '&errorCode=' + errorCode + '&objPwd=' + _objPwd + '&computerName=' + computerName + '&mac=' + mac + '&isPCI=' + isPCI;
+            var _title = '修改密码';
+            ctpMSB.win({
+                message: winurl,
+                width: 800,
+                height: 400,
+                title: _title,
+                handler: closessowin,
+                maxBtn: true,
+                minBtn: true,
+                iframe: true
+            });
+        }
+
+        function closessowin(_retObj) {
+            var userDomain = document.logonform.adObj.UserDomain;
+            var adSupport = 'intranet.icbc.com.cn';
+            var strs = adSupport.split(",");
+            var index = -1;
+            var isFind = false;
+            for (var i = 0; i < strs.length; i++) {
+                if (trim(strs[i].toLowerCase()) == userDomain.toLowerCase()) {
+                    isFind = true;
+                    index = i;
+                    break;
+                }
+            }
+            var adfsServers = 'https://adfs/adfs/ls/';
+            var adfsServ = adfsServers.split(',')[index];
+            var wctx = "SERVICENAME=&SERVICEURL=&OP=&OPMode=1&VERSION=1.0&flag=" + "&cerFileIndex=" + index;
+            //增加参数证书文件   修改WCTX直接由TEMP变量构造
+            wctx += "&mainLocal=" + parent.location.protocol + "//" + parent.location.host;
+            //增加当前页面用户输入的地址
+            wctx = encode64(strUnicode2Ansi(wctx));
+            //base64编码
+            document.adlogonform.action = adfsServ;
+            //重置ADFS地址
+            document.adlogonform.wctx.value = wctx;
+            document.adlogonform.target = "_self";
+            //在当前页面跳转
+            document.adlogonform.submit();
+        }
+
+        function closewin(_retObj) {
+            if (_retObj.oper == 'relogon') {
+                submitReForm('');
+            } else {
+                $("#TestPwd").val("");
+                $("#login").attr("disabled", false);
+                $("#TestPwd").attr("disabled", false);
+                if (_retObj == null || _retObj == 'close') {
+                    location.reload();
+                    return;
+                }
+                if (_retObj.oper == 1) {
+                    ctpMSB.close();
+                    location.reload();
+                }
+                if (_retObj.oper == 2) {
+                    //2014年10月版，非单点登录情况下，密码到期后修改密码后自动完成身份认证，修改成功后返回值改为2，by lidw 20140903
+                    ctpMSB.close();
+                    location.reload();
+                }
+            }
+        }
+
+        //生成8位随机字符串，13年11月版本补丁3，lijh02
+        function genRandomStr() {
+            var rnd = '';
+            var ary = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+            for (var i = 0; i < 8; i++) {
+                var j = Math.floor(Math.random() * 62);
+                rnd += ary[j];
+            }
+            return rnd;
+        }
+
+        //14年1月版，kfzx-lijh02
+        function openpassnowin() {
+            ctpMSB.close();
+            var winurl = 'findpassno.jsp';
+            winurl = winurl + "?computerName=" + computerName + "&mac=" + mac;
+            var _title = '获取通行证号';
+            ctpMSB.win({
+                message: winurl,
+                width: 500,
+                height: 330,
+                title: _title,
+                handler: closewin,
+                maxBtn: true,
+                minBtn: true,
+                iframe: true
+            });
+        }
+
+        //AD/Notes提醒窗口隐登记按钮，14年5月补丁5，lijh02
+        function handleNoAdNotes(type) {
+            if (type == "ad") {
+                if (tipad.checked == true && $("#add_ad_btn").css('display') == 'block') {
+                    $("#add_ad_btn").css("display", "none");
+                } else {
+                    $("#add_ad_btn").css("display", "block");
+                }
+            }
+            if (type == "notes") {
+                if (tipnotes.checked == true && $("#add_notes_btn").css('display') == 'block') {
+                    $("#add_notes_btn").css("display", "none");
+                } else {
+                    $("#add_notes_btn").css("display", "block");
+                }
+            }
+        }
+
+        function switchLoginPage(type) {
+            var actionPage = "";
+            switch (type) {
+                case ("0"):
+                    actionPage = '/en_US/uniform_attestation/login.jsp';
+                    break;
+                case ("2"):
+                    actionPage = '/uniform_attestation/certlogin.jsp';
+                    break;
+                case ("3"):
+                    actionPage = fpAuthSMSwitch == 'true' && !isIE ? '/uniform_attestation/fploginSM.jsp' : '/uniform_attestation/fplogin.jsp';
+                    break;
+                case ("4"):
+                    actionPage = '/uniform_attestation/facelogin.jsp';
+                    break;
+                case ("5"):
+                    actionPage = '/uniform_attestation/qrcodelogin.jsp';
+                    break;
+                default:
+                    actionPage = '/uniform_attestation/login.jsp';
+                    break;
+            }
+            parent.document.loginPageForm.pageSwitch.value = 0;
+            parent.document.loginPageForm.chSiteName.value = encodeURI(siteName);
+            parent.document.loginPageForm.enSiteName.value = enSiteName;
+            parent.document.loginPageForm.defaultLoginWay.value = defaultLoginWay;
+            parent.document.loginPageForm.SERVICENAME.value = siteService;
+            parent.document.loginPageForm.OP.value = siteOp;
+            parent.document.loginPageForm.VERSION.value = siteVersion;
+            parent.document.loginPageForm.OPMode.value = opMode;
+            parent.document.loginPageForm.lang.value = language;
+            parent.document.loginPageForm.style.value = style;
+            parent.document.loginPageForm.SERVICEURL.value = siteURL;
+            parent.document.loginPageForm.action = actionPage;
+            parent.document.loginPageForm.isIE.value = isIE;
+            parent.document.loginPageForm.submit();
+        }
+
+        // 设置默认登录方式
+        function setDefaultLoginWay() {
+            defaultLoginWay = CUR_LOGIN_WAY;
+            var opText = SET_LOGIN_WAY_TEXT;
+            var btnText = CANCEL_LOGIN_WAY_TEXT;
+            if ($("#default_btn").text() == CANCEL_LOGIN_WAY_TEXT) {
+                defaultLoginWay = '';
+                opText = CANCEL_LOGIN_WAY_TEXT;
+                btnText = SET_LOGIN_WAY_TEXT;
+            }
+            reqData = {
+                "ad": ad,
+                "mac": mac,
+                "computerName": computerName,
+                "loginWay": defaultLoginWay
+            };
+            $.ajax({
+                url: "/servlet/com.icbc.ssic.base.SetDefaultLoginWay",
+                async: true,
+                data: reqData,
+                dataType: "json",
+                type: "POST",
+                cache: false,
+                success: function (_data) {
+                    if (_data.retCode == '0') {
+                        alertMsg(opText + '登录方式成功。', 'userName');
+                        $("#default_btn").text(btnText);
+                    } else if (_data.retCode == '1' || _data.retCode == '2' || _data.retCode == '3') {
+                        alertMsg('无法确认登录用户身份，操作失败。', 'userName');
+                    } else {
+                        alertMsg(msg + '登录方式失败，请稍后再试。', 'userName');
+                    }
+                },
+                error: function (m, errtxt, xhr) {
+                    alertMsg('身份认证与集中授权平台处理出现异常，请稍后再试。' + errtxt, 'userName');
+                }
+            });
+        }
+    </script>
+</HEAD>
+
+<body class="page_bg_img" leftmargin="0" topmargin="0" onload="on_Load()" scroll="no">
+<div id="sliceCover"
+     style="margin: 0 auto;width:1000px;position:absolute; left:50%;top:50%;height:340px;margin-left:-490px;margin-top: -170px;">
+    <div id="sliceCaptcha" style="margin:auto;z-index:10000;left:268px"></div>
+</div>
+<div class="login_center_mid">
+    <div id="login_head">
+        <h1 class="login_logo">中国工商银行</h1>
+        <div id="siteName" class="system_indentification">身份认证与集中授权平台</div>
+        <div id="default_btn" onclick="setDefaultLoginWay();">设为默认</div>
+    </div>
+    <div id="login_content">
+        <div class="login_middle_center">
+            <div class="login_cn_box" style="width: 345px;height: 300px;background-size: cover;">
+                <form name="logonform" id="logonform" method="post"
+                      action="/servlet/com.icbc.ssic.base.UniformAsynLogon" onsubmit="return false">
+                    <table class="login_table" cellpadding="0" cellspacing="0" border="0" width="90%"
+                           align="center">
+                        <tr>
+                            <OBJECT style="display:none" ID="adObj" WIDTH="120" HEIGHT="21"
+                                    CLASSID="CLSID:00A92099-D3D0-46E6-88AD-9482EB972E83"
+                                    codebase="/crypt/EAAM_SSO.cab#version=1,0,0,2" align="middle"></OBJECT>
+                            <td width="50" align="right">通行证</td>
+                            <!-- 2014年2月版 将keyup改成keydown，捕捉tab键 huangwj -->
+                            <td>
+                                <input class="login_textinput cInputValue" style="width:158px;" autocomplete="off"
+                                       type="text" id="userName" name="userName" onkeyup=getfocus1("TestPwd" )
+                                       onpropertychange=removeBg() size="30" maxlength="30" tabindex=0/>
+                                <a class="forgetPassword" style="font-size:11px;" href="javascript:openpassnowin();"
+                                   tabindex=2>忘记通行证号</a>
+                            </td>
+                            <!-- 2014年2月版 调整tab键顺序 增加 tabindex=2 huangwj -->
+                        </tr>
+                        <tr>
+                            <td width="50" align="right">密码</td>
+                            <td>
+                                <input class="login_textinput" type="password" id="TestPwd"
+                                       style="width:140px;font-size:10px;" size="30" maxlength="30" tabindex=0>
+                                <a class="forgetPassword" style="font-size:11px;left: -18px;position:relative;"
+                                   href="javascript:openwin();" tabindex=3>忘记密码</a>
+                                <!-- 2014年2月版 调整tab键顺序 增加 tabindex=3 huangwj -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <input type="hidden">
+                                <!-- 兼容IE6需要拿个hidden占位，按钮才可显示，14年1月版本，lijh02 -->
+                                <input type="button" id="login" class="login_submit_cn" style="width:165px;"
+                                       value="登录" name="login" onclick="submitForm();" tabindex=1/>
+                                <!-- 2014年2月版 调整tab键顺序 增加 tabindex=1 huangwj -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" align="right"
+                                style="padding: 8px 32px 0 0; height:13px; line-height:13px;" class="f12px">
+                                <a class="cGrey" href='javascript:switchLoginPage("0")' tabindex=8>English</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" align="center" style="padding-top:20px; height:13px; line-height:13px;"
+                                class="f12px">
+                                    <span id='certloginway'>
+                                        <a class="cGrey" href='javascript:switchLoginPage("2")' tabindex=4>证书登录</a>
+                                        <span class="cGrey">|</span>
+                                    </span>
+                                <span id='fploginway'>
+                                        <a class="cGrey" href='javascript:switchLoginPage("3")' tabindex=5>指纹登录</a>
+                                        <span class="cGrey">|</span>
+                                    </span>
+                                <span id='qrcodeloginway'>
+                                        <a class="cGrey" href='javascript:switchLoginPage("5")' tabindex=7>扫码登录</a>
+                                    </span>
+                            </td>
+                        </tr>
+                    </table>
+                    <input type="hidden" name="password"/>
+                    <input type="hidden" name="prepassword"/>
+                    <input type="hidden" name="preuuidKey"/>
+                    <input type="hidden" name="crpytFlag" value="1"/>
+                    <input type="hidden" name="SERVICENAME" value=""/>
+                    <input type="hidden" name="SERVICEURL" value=""/>
+                    <input type="hidden" name="OP" value=""/>
+                    <input type="hidden" name="VERSION" value=""/>
+                    <input type="hidden" name="OPMode" value="1"/>
+                    <input type="hidden" name="isTrustAD" value=""/>
+                    <input type="hidden" name="isAdSuccess" value=""/>
+                    <input type="hidden" name="sysUserName" value=""/>
+                    <input type="hidden" name="adOP" value=""/>
+                    <input type="hidden" name="isValiJsp" value="false"/>
+                    <input type="hidden" name="computerName" value=""/>
+                    <!--2014年1月，kfzx-cenjm-->
+                    <input type="hidden" name="isDynamicPwd" value='false'/>
+                    <input type="hidden" name="mac" value=""/>
+                    <!-- 14年1月，lijh02 -->
+                    <input type="hidden" name="isPCI" value=""/>
+                    <!-- 2015年1月，liugc -->
+                </form>
+                <form name="adlogonform" method="get" target="_self" action="https://adfs/adfs/ls/"
+                      onsubmit="return false">
+                    <input type="hidden" name="wa" value="wsignin1.0"/>
+                    <input type="hidden" name="wtrealm" value="urn:aam"/>
+                    <input type="hidden" name="wctx"
+                           value="U0VSVklDRU5BTUU9JlNFUlZJQ0VVUkw9Jk9QPSZPUE1vZGU9MSZWRVJTSU9OPTEuMCZmbGFnPQ=="/>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!--footer-->
+    <div id="login_footer">
+        <p>CopyRight 中国工商银行股份有限公司 版权所有</p>
+    </div>
+    <!--footer end-->
+    <div id="pop_div_pwd" class="pop_div_pwd"></div>
+    <div id="message_box_pwd" class="message_box_pwd">
+        <h3>
+            修改密码提醒<span id="editclose" class="editclose"></span>
+        </h3>
+        <div class="wx_message">
+            <div id="msg_box">
+                您的密码将在<span id="days"></span>
+                天后（<span id="overday"></span>
+                ）到期，您可以选择现在修改密码，或继续登录。<br/>
+                <br/>
+                <input type="checkbox" name="tippwd" id="tippwd"/>下次不再提醒
+
+            </div>
+        </div>
+        <div class="text_c">
+            <input type="button" name="button" id="editpassword" value="修改密码" onclick="reqModpwd();"/>
+            <input type="button" name="button" id="pwdconfirm" value="继续登录" onclick="submitReForm('');"/>
+        </div>
+    </div>
+    <div id="pop_div_adnotes" class="pop_div_pwd"></div>
+    <div id="message_box_adnotes" class="message_box_pwd">
+        <h3>
+            <span id="adnotes_title"></span>
+            <span id="editclose" class="editclose"></span>
+        </h3>
+        <div class="wx_message">
+            <div id="adnotes_msg_box" style="overflow:auto;">
+                <span id="adnotes_tips_msg"></span>
+                <br/>
+                <br/>
+                <div style="float:left;margin-left:10px;">
+                    <input type="checkbox" class="tipad_box_text" id="tipad" style="display:none;"
+                           onclick="javascript:handleNoAdNotes('ad');"/>
+                </div>
+                <div style="float:left;">
+                    <span class="tipad_box_text" style="display:none;margin-top:3px;">我没有AD </span>
+                </div>
+                <div style="float:left;margin-left:10px;">
+                    <input type="checkbox" class="tipnotes_box_text" id="tipnotes" style="display:none;"
+                           onclick="javascript:handleNoAdNotes('notes');"/>
+                </div>
+                <div style="float:left;">
+                    <span class="tipnotes_box_text" style="display:none;margin-top:3px;">我没有Notes</span>
+                </div>
+            </div>
+        </div>
+        <div class="text_c" style="position: absolute; right: 15px;">
+            <div style="float:left;">
+                <input type="button" name="button" id="add_ad_btn" value="登记AD" style="display:none;"
+                       onclick="submitReForm('ad');"/>
+            </div>
+            <div style="float:left;">
+                <input type="button" name="button" id="add_notes_btn" value="登记Notes" style="display:none;"
+                       onclick="submitReForm('notes');"/>
+            </div>
+            <div style="float:left;">
+                <input type="button" name="button" id="adnotesconfirm" value="继续登录" onclick="submitReForm('');"/>
+            </div>
+        </div>
+    </div>
+    <div id="pop_div_hr" class="pop_div_pwd"></div>
+    <div id="message_box_hr" class="message_box_pwd">
+        <h3>
+            信息核实<span id="editclose" class="editclose"></span>
+        </h3>
+        <div class="wx_message">
+            <div id="hr_msg_box" style="overflow:auto;">
+                <span id="remindmsgtext"></span>
+                <br/>
+                <br/>
+            </div>
+        </div>
+        <div class="text_c" style="position: absolute; right: 15px;">
+            <div style="float:left;">
+                <input type="button" name="button" id="tohrbt" value="现在核实" style="display:none;"
+                       onclick="redirectToHr('');"/>
+            </div>
+            <div style="float:left;">
+                <input type="button" name="button" id="hrconfirm" value="继续登录" onclick="submitReForm('');"/>
+            </div>
+        </div>
+    </div>
+    <div id="pop_div_hr_ad" class="pop_div_pwd"></div>
+    <div id="message_box_hr_ad" class="message_box_pwd">
+        <h3>
+            信息核实<span id="editclose" class="editclose"></span>
+        </h3>
+        <div class="wx_message">
+            <div id="hr_msg_box_ad" style="overflow:auto;">
+                <span id="remindmsgtext_ad"></span>
+                <br/>
+                <br/>
+            </div>
+        </div>
+        <div class="text_c" style="position: absolute; right: 15px;">
+            <div style="float:left;">
+                <input type="button" name="button" id="tohrbtad" value="现在核实" style="display:none;"
+                       onclick="redirectToHr('ad');"/>
+            </div>
+            <div style="float:left;">
+                <input type="button" name="button" id="hrconfirmad" value="继续登录" onclick="reloginserviceurl();"/>
+            </div>
+        </div>
+    </div>
+    <form id="safe_web" name="safe_web" action="/crypt/aam.zip" target="_blank"></form>
+</body>
+
+</HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>
