@@ -18,7 +18,7 @@ export default function Index() {
         <div id='box'>
             <div>
                 <div>
-                    <p>Git有问题？</p>
+                    <p>Git没有问题</p>
                 </div>
             </div>
         </div>
